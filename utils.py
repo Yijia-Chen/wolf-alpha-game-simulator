@@ -9,6 +9,7 @@ import threading
 # Meta
 SECONDS_IN_DAY = 24 * 60 * 60
 LOCK = threading.Lock()
+TRUE_INPUTS = ['t', 'T', 'true', 'True', 'y', 'Y', 'yes', 'Yes']
 
 # Pack returns
 TOTAL_WINNING_POOL = 500000000
@@ -42,7 +43,6 @@ POINTS_EARNED_DAILY_BY_LEVEL = {
 
 # Actions
 FRACTION_POINTS_REDUCED_BY_ATTACK = 0.03
-PROBABILITY_ACTION_IS_ATTACK = 0.5
 
 
 #################### TEMPLATES ####################
@@ -143,9 +143,9 @@ class Pack:
         timespan_in_days = get_elapsed_days(self.progress_updated_at)
         self.next_action_progress += timespan_in_days / self.days_to_earn_action
         if self.next_action_progress >= 1:
-            p = PROBABILITY_ACTION_IS_ATTACK
-            self.gain_action(is_attack=random.choices(
-                [True, False], [p, 1 - p]))
+            is_attack = input(
+                'pack %d: would you like an attack or fortify action?')
+            self.gain_action(is_attack=(is_attack in TRUE_INPUTS))
             self.next_action_progress -= 1
             logging.info('pack %d: gained an action' % self.id)
 
@@ -234,17 +234,17 @@ class Player:
 #################### VARIABLES ####################
 # In-game
 all_players: 'dict[int, Player]' = {
-    # index -> player, such as the following
-    -1: Player(id=-1, is_wolf=True, level=5)
+    # id -> player
 }
 all_packs: 'dict[int, Pack]' = {
-    # index -> pack, such as the following
-    -1: Pack(-1)
+    # id -> pack
 }
 
 # Meta
 wool_price_usd: float = 0.26
 timespan_in_days: float = 10.0
+pack_count: int = 25
+player_count: int = 2000  # FIXME
 
 
 #################### FUNCTIONS ####################
@@ -273,3 +273,9 @@ def update_points() -> None:
         else:
             pack.point_contributions[playerId] += points_earned
     logging.info('meta: points updated')
+
+
+def update_all() -> None:
+    update_points()
+    for _, pack in all_packs.items():
+        pack.update_next_action_progress()
