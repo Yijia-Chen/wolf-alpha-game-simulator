@@ -1,51 +1,9 @@
+from utility.constants import *
+from utility.variables import *
 from datetime import datetime
 import logging
-import random
-import threading
 
 
-#################### CONSTANTS ####################
-
-# Meta
-SECONDS_IN_DAY = 24 * 60 * 60
-LOCK = threading.Lock()
-TRUE_INPUTS = ['t', 'T', 'true', 'True', 'y', 'Y', 'yes', 'Yes']
-
-# Pack returns
-TOTAL_WINNING_POOL = 500000000
-FRACTION_WINNING_POOL_BY_PLACE = [
-    0.2,
-    0.1575,
-    0.12,
-    0.0975,
-    0.0775,
-    0.0625,
-    0.0525,
-    0.045,
-    0.0375,
-    0.035,
-    0.0325,
-    0.03,
-    0.0275,
-    0.025
-]
-
-# Individual returns
-FRACTION_WOOL_FOR_ALPHA = 0.05
-MIN_WOOL_WIN = 10000
-POINTS_EARNED_DAILY_BY_LEVEL = {
-    0: 50,        # sheep
-    5: 50**2,    # omega wolf
-    6: 60**2,    # delta wolf
-    7: 70**2,    # beta wolf
-    8: 0         # alpha wolf
-}
-
-# Actions
-FRACTION_POINTS_REDUCED_BY_ATTACK = 0.03
-
-
-#################### TEMPLATES ####################
 class Pack:
     def __init__(self, id: int, leader_id: int, leader_wool: float) -> None:
         LOCK.acquire()
@@ -170,6 +128,8 @@ class Pack:
 
 class Player:
     def __init__(self, id: int, is_wolf: bool, level: int, initial_wood_staked: float) -> None:
+        LOCK.acquire()
+
         if level not in POINTS_EARNED_DAILY_BY_LEVEL:
             logging.error('player %d: incorrect level at initialization' % id)
 
@@ -182,6 +142,8 @@ class Player:
         self.wool_staked = initial_wood_staked
         self.wool_changes: list[float] = []
         logging.info('player %d: initialized' % self.id)
+
+        LOCK.release()
 
     def stake(self, amount: float) -> None:
         LOCK.acquire()
@@ -231,7 +193,6 @@ class Player:
         LOCK.release()
 
 
-#################### VARIABLES ####################
 # In-game
 all_players: 'dict[int, Player]' = {
     # id -> player
@@ -240,14 +201,7 @@ all_packs: 'dict[int, Pack]' = {
     # id -> pack
 }
 
-# Meta
-wool_price_usd: float = 0.26
-timespan_in_days: float = 10.0
-pack_count: int = 25
-player_count: int = 2000  # FIXME
 
-
-#################### FUNCTIONS ####################
 def get_elapsed_days(timestamp: datetime) -> float:
     return (datetime.now() - timestamp).total_seconds() / SECONDS_IN_DAY
 
@@ -255,6 +209,16 @@ def get_elapsed_days(timestamp: datetime) -> float:
 def attack(attackerId, targetId) -> None:
     all_packs[attackerId].attack(targetId)
     all_packs[targetId].targeted()
+
+
+def update_wool_price() -> float:
+    # TODO mechanism for updating wool price
+    # How does this get updated?
+    return wool_price_usd
+
+
+def get_total_active_players() -> int:
+    return sum(player_count_by_level.values())
 
 
 def update_points() -> None:
