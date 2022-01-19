@@ -14,12 +14,5 @@ class TestEntities(unittest.TestCase):
 
         self.assertAlmostEqual(elapsed_days_expected, elapsed_days_actual)
 
-    # def test_env_time(self):
-    #     env = Environment()
-    #     print(type(env.now))
-
-
-# TODO add more tests
-
 
 unittest.main()
